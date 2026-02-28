@@ -1,0 +1,899 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Live Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --bg: #0a0a14;
+  --card-bg: rgba(255, 255, 255, 0.04);
+  --card-border: rgba(255, 255, 255, 0.08);
+  --card-hover-border: rgba(255, 255, 255, 0.15);
+  --text: #e8e8f0;
+  --text-dim: #8888a8;
+  --text-muted: #55556a;
+  --accent-blue: #4d9fff;
+  --accent-purple: #a855f7;
+  --accent-cyan: #22d3ee;
+  --accent-pink: #ec4899;
+  --accent-green: #34d399;
+  --accent-orange: #fb923c;
+  --glow-blue: rgba(77, 159, 255, 0.3);
+  --glow-purple: rgba(168, 85, 247, 0.3);
+  --glow-cyan: rgba(34, 211, 238, 0.3);
+  --glow-pink: rgba(236, 72, 153, 0.3);
+}
+
+html { font-size: 16px; }
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Aurora Background ── */
+.aurora {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.aurora-blob {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(120px);
+  opacity: 0.25;
+  animation: aurora-drift 20s ease-in-out infinite alternate;
+}
+
+.aurora-blob:nth-child(1) {
+  width: 600px; height: 600px;
+  background: radial-gradient(circle, var(--accent-blue), transparent 70%);
+  top: -10%; left: -5%;
+  animation-duration: 18s;
+}
+
+.aurora-blob:nth-child(2) {
+  width: 500px; height: 500px;
+  background: radial-gradient(circle, var(--accent-purple), transparent 70%);
+  top: 30%; right: -10%;
+  animation-duration: 22s;
+  animation-delay: -5s;
+}
+
+.aurora-blob:nth-child(3) {
+  width: 550px; height: 550px;
+  background: radial-gradient(circle, var(--accent-cyan), transparent 70%);
+  bottom: -15%; left: 25%;
+  animation-duration: 25s;
+  animation-delay: -10s;
+}
+
+.aurora-blob:nth-child(4) {
+  width: 400px; height: 400px;
+  background: radial-gradient(circle, var(--accent-pink), transparent 70%);
+  top: 60%; left: 60%;
+  animation-duration: 20s;
+  animation-delay: -3s;
+}
+
+@keyframes aurora-drift {
+  0%   { transform: translate(0, 0) scale(1); }
+  25%  { transform: translate(80px, -60px) scale(1.1); }
+  50%  { transform: translate(-40px, 80px) scale(0.95); }
+  75%  { transform: translate(60px, 40px) scale(1.05); }
+  100% { transform: translate(-30px, -50px) scale(1); }
+}
+
+/* ── Noise Texture Overlay ── */
+.noise {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  opacity: 0.03;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 200px;
+}
+
+/* ── Main Layout ── */
+.container {
+  position: relative;
+  z-index: 2;
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem 4rem;
+}
+
+/* ── Header ── */
+.header {
+  text-align: center;
+  margin-bottom: 3rem;
+  animation: fade-in-up 0.8s ease-out;
+}
+
+.header h1 {
+  font-size: 2.5rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple), var(--accent-pink));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  margin-bottom: 0.5rem;
+}
+
+.header .subtitle {
+  color: var(--text-dim);
+  font-size: 0.95rem;
+  font-weight: 400;
+  letter-spacing: 0.02em;
+}
+
+/* ── Clock Section ── */
+.clock-section {
+  text-align: center;
+  margin-bottom: 3rem;
+  animation: fade-in-up 0.8s ease-out 0.1s both;
+}
+
+.clock-time {
+  font-size: 5rem;
+  font-weight: 200;
+  letter-spacing: 0.04em;
+  font-variant-numeric: tabular-nums;
+  background: linear-gradient(to bottom, #ffffff, #a0a0c0);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  line-height: 1.1;
+}
+
+.clock-seconds {
+  font-size: 2rem;
+  font-weight: 300;
+  opacity: 0.5;
+  vertical-align: super;
+}
+
+.clock-date {
+  font-size: 1.1rem;
+  color: var(--text-dim);
+  font-weight: 400;
+  margin-top: 0.3rem;
+  letter-spacing: 0.05em;
+}
+
+.clock-tz-row {
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+  margin-top: 1rem;
+  flex-wrap: wrap;
+}
+
+.clock-tz {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.15rem;
+}
+
+.clock-tz .tz-time {
+  font-size: 1rem;
+  color: var(--text-dim);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Grid Layout ── */
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+}
+
+.dashboard-grid .section-weather { grid-column: 1 / -1; }
+.dashboard-grid .section-news { grid-column: 1 / 2; }
+.dashboard-grid .section-tech { grid-column: 2 / 4; }
+
+@media (max-width: 1024px) {
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+  }
+  .dashboard-grid .section-weather,
+  .dashboard-grid .section-news,
+  .dashboard-grid .section-tech {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 600px) {
+  .container { padding: 1rem 0.75rem 3rem; }
+  .header h1 { font-size: 1.75rem; }
+  .clock-time { font-size: 3rem; }
+  .clock-seconds { font-size: 1.2rem; }
+}
+
+/* ── Card ── */
+.card {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 20px;
+  padding: 1.75rem;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  position: relative;
+  overflow: hidden;
+  transition: border-color 0.4s ease, box-shadow 0.4s ease, transform 0.3s ease;
+}
+
+.card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 20px;
+  padding: 1px;
+  background: linear-gradient(135deg, transparent, rgba(255,255,255,0.05), transparent);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+.card:hover {
+  border-color: var(--card-hover-border);
+  transform: translateY(-2px);
+}
+
+.card.glow-blue:hover   { box-shadow: 0 0 40px -10px var(--glow-blue); }
+.card.glow-purple:hover { box-shadow: 0 0 40px -10px var(--glow-purple); }
+.card.glow-cyan:hover   { box-shadow: 0 0 40px -10px var(--glow-cyan); }
+.card.glow-pink:hover   { box-shadow: 0 0 40px -10px var(--glow-pink); }
+
+/* ── Section Header ── */
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.25rem;
+}
+
+.section-title {
+  font-size: 1rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  letter-spacing: 0.01em;
+}
+
+.section-icon {
+  font-size: 1.15rem;
+}
+
+.section-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.7rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  background: rgba(255,255,255,0.04);
+  padding: 0.25rem 0.65rem;
+  border-radius: 100px;
+  border: 1px solid rgba(255,255,255,0.06);
+}
+
+.badge-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--accent-green);
+  animation: pulse-dot 2s ease-in-out infinite;
+}
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(0.8); }
+}
+
+.last-updated {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  font-weight: 400;
+}
+
+/* ── Weather Grid ── */
+.weather-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 1rem;
+}
+
+@media (max-width: 900px) {
+  .weather-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 500px) {
+  .weather-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.weather-card {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 16px;
+  padding: 1.25rem;
+  text-align: center;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.weather-card::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--accent-cyan), transparent);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.weather-card:hover {
+  background: rgba(255,255,255,0.06);
+  border-color: rgba(255,255,255,0.12);
+  transform: translateY(-3px);
+}
+
+.weather-card:hover::after { opacity: 1; }
+
+.weather-city {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 0.75rem;
+}
+
+.weather-icon {
+  font-size: 2.5rem;
+  margin-bottom: 0.5rem;
+  filter: drop-shadow(0 0 8px rgba(255,255,255,0.1));
+}
+
+.weather-temp {
+  font-size: 2rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin-bottom: 0.2rem;
+}
+
+.weather-desc {
+  font-size: 0.75rem;
+  color: var(--text-dim);
+  text-transform: capitalize;
+  margin-bottom: 0.75rem;
+}
+
+.weather-details {
+  display: flex;
+  justify-content: center;
+  gap: 0.75rem;
+  font-size: 0.7rem;
+  color: var(--text-muted);
+}
+
+.weather-detail {
+  display: flex;
+  align-items: center;
+  gap: 0.2rem;
+}
+
+/* ── News List ── */
+.news-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.news-item {
+  display: flex;
+  gap: 0.75rem;
+  padding: 0.85rem 0;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+  transition: all 0.2s ease;
+  cursor: pointer;
+  text-decoration: none;
+  color: inherit;
+}
+
+.news-item:last-child { border-bottom: none; }
+
+.news-item:hover {
+  background: rgba(255,255,255,0.02);
+  margin: 0 -0.75rem;
+  padding-left: 0.75rem;
+  padding-right: 0.75rem;
+  border-radius: 10px;
+}
+
+.news-index {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  min-width: 1.5rem;
+  padding-top: 0.15rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.news-content { flex: 1; min-width: 0; }
+
+.news-title {
+  font-size: 0.85rem;
+  font-weight: 500;
+  line-height: 1.45;
+  margin-bottom: 0.25rem;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.news-item:hover .news-title { color: var(--accent-blue); }
+
+.news-meta {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+}
+
+/* ── Tech News Grid ── */
+.tech-news-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.75rem;
+}
+
+@media (max-width: 700px) {
+  .tech-news-grid { grid-template-columns: 1fr; }
+}
+
+.tech-item {
+  background: rgba(255,255,255,0.02);
+  border: 1px solid rgba(255,255,255,0.04);
+  border-radius: 12px;
+  padding: 1rem;
+  transition: all 0.3s ease;
+  cursor: pointer;
+  text-decoration: none;
+  color: inherit;
+  display: block;
+}
+
+.tech-item:hover {
+  background: rgba(255,255,255,0.05);
+  border-color: rgba(168, 85, 247, 0.2);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 30px -10px rgba(168, 85, 247, 0.15);
+}
+
+.tech-item .news-title {
+  font-size: 0.85rem;
+  font-weight: 500;
+  line-height: 1.45;
+  margin-bottom: 0.4rem;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.tech-item:hover .news-title { color: var(--accent-purple); }
+
+.tech-item .news-meta {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+}
+
+/* ── Skeleton Loading ── */
+.skeleton {
+  background: linear-gradient(90deg, rgba(255,255,255,0.03) 25%, rgba(255,255,255,0.07) 50%, rgba(255,255,255,0.03) 75%);
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.8s ease-in-out infinite;
+  border-radius: 8px;
+}
+
+@keyframes skeleton-shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.skeleton-weather-card {
+  height: 180px;
+  border-radius: 16px;
+}
+
+.skeleton-news-item {
+  height: 52px;
+  margin-bottom: 0.5rem;
+  border-radius: 8px;
+}
+
+.skeleton-tech-item {
+  height: 80px;
+  border-radius: 12px;
+}
+
+/* ── Animations ── */
+@keyframes fade-in-up {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.card { animation: fade-in-up 0.7s ease-out both; }
+.card:nth-child(1) { animation-delay: 0.15s; }
+.card:nth-child(2) { animation-delay: 0.25s; }
+.card:nth-child(3) { animation-delay: 0.35s; }
+
+.weather-card {
+  animation: fade-in-up 0.5s ease-out both;
+}
+
+.news-item, .tech-item {
+  animation: fade-in-up 0.4s ease-out both;
+}
+
+/* ── Error state ── */
+.error-msg {
+  color: var(--accent-pink);
+  font-size: 0.85rem;
+  padding: 1rem;
+  text-align: center;
+  background: rgba(236, 72, 153, 0.05);
+  border-radius: 10px;
+  border: 1px solid rgba(236, 72, 153, 0.1);
+}
+
+/* ── Footer ── */
+.footer {
+  text-align: center;
+  margin-top: 3rem;
+  color: var(--text-muted);
+  font-size: 0.75rem;
+}
+</style>
+</head>
+<body>
+
+<!-- Aurora Background -->
+<div class="aurora">
+  <div class="aurora-blob"></div>
+  <div class="aurora-blob"></div>
+  <div class="aurora-blob"></div>
+  <div class="aurora-blob"></div>
+</div>
+<div class="noise"></div>
+
+<div class="container">
+
+  <!-- Header -->
+  <header class="header">
+    <h1>Live Dashboard</h1>
+    <p class="subtitle">Real-time weather, news &amp; world clocks</p>
+  </header>
+
+  <!-- Clock -->
+  <section class="clock-section">
+    <div class="clock-time" id="clock-time"></div>
+    <div class="clock-date" id="clock-date"></div>
+    <div class="clock-tz-row" id="clock-tz-row"></div>
+  </section>
+
+  <!-- Dashboard Grid -->
+  <div class="dashboard-grid">
+
+    <!-- Weather -->
+    <section class="section-weather card glow-cyan">
+      <div class="section-header">
+        <div class="section-title">
+          <span class="section-icon">&#127780;&#65039;</span> Weather
+        </div>
+        <div style="display:flex;align-items:center;gap:0.75rem;">
+          <span class="last-updated" id="weather-updated"></span>
+          <span class="section-badge"><span class="badge-dot"></span> Live</span>
+        </div>
+      </div>
+      <div class="weather-grid" id="weather-grid">
+        <!-- filled by JS -->
+      </div>
+    </section>
+
+    <!-- World News -->
+    <section class="section-news card glow-blue">
+      <div class="section-header">
+        <div class="section-title">
+          <span class="section-icon">&#128240;</span> World News
+        </div>
+        <div style="display:flex;align-items:center;gap:0.75rem;">
+          <span class="last-updated" id="news-updated"></span>
+          <span class="section-badge"><span class="badge-dot"></span> Live</span>
+        </div>
+      </div>
+      <div class="news-list" id="news-list">
+        <!-- filled by JS -->
+      </div>
+    </section>
+
+    <!-- AI & Tech -->
+    <section class="section-tech card glow-purple">
+      <div class="section-header">
+        <div class="section-title">
+          <span class="section-icon">&#129302;</span> AI &amp; Tech
+        </div>
+        <div style="display:flex;align-items:center;gap:0.75rem;">
+          <span class="last-updated" id="tech-updated"></span>
+          <span class="section-badge"><span class="badge-dot"></span> Live</span>
+        </div>
+      </div>
+      <div class="tech-news-grid" id="tech-grid">
+        <!-- filled by JS -->
+      </div>
+    </section>
+
+  </div>
+
+  <footer class="footer">
+    Built with &#10084;&#65039; by AI &middot; Data refreshes every 10 minutes
+  </footer>
+
+</div>
+
+<script>
+/* ================================================================
+   LIVE DASHBOARD — Self-contained, no build step
+   ================================================================ */
+
+// ── Helpers ──
+const $ = (sel) => document.querySelector(sel);
+const formatTime = (d) => d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
+const formatTimeSec = (d) => d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
+const formatDate = (d) => d.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+const timeAgo = (d) => {
+  const s = Math.floor((Date.now() - d) / 1000);
+  if (s < 60) return 'just now';
+  if (s < 3600) return `${Math.floor(s/60)}m ago`;
+  return `${Math.floor(s/3600)}h ago`;
+};
+const updatedAt = () => {
+  const d = new Date();
+  return `Updated ${d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false })}`;
+};
+
+// ── Clock ──
+const TIMEZONES = [
+  { label: 'Tel Aviv',     tz: 'Asia/Jerusalem' },
+  { label: 'Paris',        tz: 'Europe/Paris' },
+  { label: 'London',       tz: 'Europe/London' },
+  { label: 'New York',     tz: 'America/New_York' },
+  { label: 'Los Angeles',  tz: 'America/Los_Angeles' },
+];
+
+function updateClock() {
+  const now = new Date();
+  const parts = formatTimeSec(now).split(':');
+  $('#clock-time').innerHTML = `${parts[0]}:${parts[1]}<span class="clock-seconds">:${parts[2]}</span>`;
+  $('#clock-date').textContent = formatDate(now);
+
+  const tzRow = $('#clock-tz-row');
+  tzRow.innerHTML = TIMEZONES.map(({ label, tz }) => {
+    const t = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: tz });
+    return `<div class="clock-tz"><span class="tz-time">${t}</span><span>${label}</span></div>`;
+  }).join('');
+}
+updateClock();
+setInterval(updateClock, 1000);
+
+// ── Weather ──
+const CITIES = [
+  { name: 'Tel Aviv',     lat: 32.0853, lon: 34.7818 },
+  { name: 'Paris',        lat: 48.8566, lon: 2.3522 },
+  { name: 'London',       lat: 51.5074, lon: -0.1278 },
+  { name: 'New York',     lat: 40.7128, lon: -74.0060 },
+  { name: 'Los Angeles',  lat: 34.0522, lon: -118.2437 },
+];
+
+const WMO_ICONS = {
+  0: '☀️', 1: '🌤️', 2: '⛅', 3: '☁️',
+  45: '🌫️', 48: '🌫️',
+  51: '🌦️', 53: '🌦️', 55: '🌧️',
+  56: '🌧️', 57: '🌧️',
+  61: '🌧️', 63: '🌧️', 65: '🌧️',
+  66: '🌧️', 67: '🌧️',
+  71: '🌨️', 73: '🌨️', 75: '❄️',
+  77: '❄️',
+  80: '🌦️', 81: '🌧️', 82: '⛈️',
+  85: '🌨️', 86: '🌨️',
+  95: '⛈️', 96: '⛈️', 99: '⛈️',
+};
+
+const WMO_DESC = {
+  0: 'Clear sky', 1: 'Mostly clear', 2: 'Partly cloudy', 3: 'Overcast',
+  45: 'Fog', 48: 'Rime fog',
+  51: 'Light drizzle', 53: 'Drizzle', 55: 'Heavy drizzle',
+  56: 'Freezing drizzle', 57: 'Heavy freezing drizzle',
+  61: 'Light rain', 63: 'Rain', 65: 'Heavy rain',
+  66: 'Freezing rain', 67: 'Heavy freezing rain',
+  71: 'Light snow', 73: 'Snow', 75: 'Heavy snow',
+  77: 'Snow grains',
+  80: 'Light showers', 81: 'Showers', 82: 'Heavy showers',
+  85: 'Light snow showers', 86: 'Heavy snow showers',
+  95: 'Thunderstorm', 96: 'Thunderstorm with hail', 99: 'Severe thunderstorm',
+};
+
+function showWeatherSkeletons() {
+  const grid = $('#weather-grid');
+  grid.innerHTML = CITIES.map(() =>
+    `<div class="skeleton skeleton-weather-card"></div>`
+  ).join('');
+}
+
+async function fetchWeather() {
+  showWeatherSkeletons();
+  try {
+    const lats = CITIES.map(c => c.lat).join(',');
+    const lons = CITIES.map(c => c.lon).join(',');
+    const results = await Promise.all(CITIES.map(async (city) => {
+      const url = `https://api.open-meteo.com/v1/forecast?latitude=${city.lat}&longitude=${city.lon}&current=temperature_2m,relative_humidity_2m,wind_speed_10m,weather_code&timezone=auto`;
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(`Weather API error for ${city.name}`);
+      const data = await res.json();
+      return { city: city.name, data };
+    }));
+
+    const grid = $('#weather-grid');
+    grid.innerHTML = results.map(({ city, data }, i) => {
+      const c = data.current;
+      const code = c.weather_code;
+      const icon = WMO_ICONS[code] || '🌡️';
+      const desc = WMO_DESC[code] || 'Unknown';
+      const temp = Math.round(c.temperature_2m);
+      const humidity = c.relative_humidity_2m;
+      const wind = Math.round(c.wind_speed_10m);
+      return `
+        <div class="weather-card" style="animation-delay: ${i * 0.08}s">
+          <div class="weather-city">${city}</div>
+          <div class="weather-icon">${icon}</div>
+          <div class="weather-temp">${temp}°</div>
+          <div class="weather-desc">${desc}</div>
+          <div class="weather-details">
+            <span class="weather-detail">💧 ${humidity}%</span>
+            <span class="weather-detail">💨 ${wind} km/h</span>
+          </div>
+        </div>`;
+    }).join('');
+
+    $('#weather-updated').textContent = updatedAt();
+  } catch (err) {
+    $('#weather-grid').innerHTML = `<div class="error-msg" style="grid-column:1/-1">Failed to load weather data. Will retry in 10 minutes.</div>`;
+    console.error('Weather error:', err);
+  }
+}
+
+// ── RSS Feed Parser (using public CORS proxy) ──
+const CORS_PROXIES = [
+  (url) => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
+  (url) => `https://corsproxy.io/?${encodeURIComponent(url)}`,
+];
+
+async function fetchRSS(feedUrl) {
+  let lastErr;
+  for (const proxy of CORS_PROXIES) {
+    try {
+      const res = await fetch(proxy(feedUrl), { signal: AbortSignal.timeout(12000) });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const text = await res.text();
+      const parser = new DOMParser();
+      const xml = parser.parseFromString(text, 'text/xml');
+      const items = [...xml.querySelectorAll('item')].map(item => ({
+        title: item.querySelector('title')?.textContent || '',
+        link: item.querySelector('link')?.textContent || '#',
+        pubDate: item.querySelector('pubDate')?.textContent || '',
+        description: item.querySelector('description')?.textContent || '',
+      }));
+      return items;
+    } catch (err) {
+      lastErr = err;
+      continue;
+    }
+  }
+  throw lastErr || new Error('All proxies failed');
+}
+
+// ── BBC News ──
+function showNewsSkeletons() {
+  const list = $('#news-list');
+  list.innerHTML = Array.from({ length: 10 }, () =>
+    `<div class="skeleton skeleton-news-item"></div>`
+  ).join('');
+}
+
+async function fetchNews() {
+  showNewsSkeletons();
+  try {
+    const items = await fetchRSS('https://feeds.bbci.co.uk/news/rss.xml');
+    const list = $('#news-list');
+    list.innerHTML = items.slice(0, 12).map((item, i) => {
+      const date = item.pubDate ? timeAgo(new Date(item.pubDate)) : '';
+      return `
+        <a class="news-item" href="${item.link}" target="_blank" rel="noopener" style="animation-delay: ${i * 0.04}s">
+          <span class="news-index">${String(i + 1).padStart(2, '0')}</span>
+          <div class="news-content">
+            <div class="news-title">${item.title}</div>
+            <div class="news-meta">BBC News ${date ? '· ' + date : ''}</div>
+          </div>
+        </a>`;
+    }).join('');
+    $('#news-updated').textContent = updatedAt();
+  } catch (err) {
+    $('#news-list').innerHTML = `<div class="error-msg">Failed to load news. Will retry in 10 minutes.</div>`;
+    console.error('News error:', err);
+  }
+}
+
+// ── VentureBeat Tech News ──
+function showTechSkeletons() {
+  const grid = $('#tech-grid');
+  grid.innerHTML = Array.from({ length: 8 }, () =>
+    `<div class="skeleton skeleton-tech-item"></div>`
+  ).join('');
+}
+
+async function fetchTech() {
+  showTechSkeletons();
+  try {
+    const items = await fetchRSS('https://feeds.feedburner.com/venturebeat/SZYF');
+    const grid = $('#tech-grid');
+    grid.innerHTML = items.slice(0, 8).map((item, i) => {
+      const date = item.pubDate ? timeAgo(new Date(item.pubDate)) : '';
+      return `
+        <a class="tech-item" href="${item.link}" target="_blank" rel="noopener" style="animation-delay: ${i * 0.05}s">
+          <div class="news-title">${item.title}</div>
+          <div class="news-meta">VentureBeat ${date ? '· ' + date : ''}</div>
+        </a>`;
+    }).join('');
+    $('#tech-updated').textContent = updatedAt();
+  } catch (err) {
+    $('#tech-grid').innerHTML = `<div class="error-msg" style="grid-column:1/-1">Failed to load tech news. Will retry in 10 minutes.</div>`;
+    console.error('Tech error:', err);
+  }
+}
+
+// ── Init & Auto-refresh ──
+async function refreshAll() {
+  await Promise.allSettled([fetchWeather(), fetchNews(), fetchTech()]);
+}
+
+refreshAll();
+setInterval(refreshAll, 10 * 60 * 1000); // every 10 minutes
+</script>
+</body>
+</html>
